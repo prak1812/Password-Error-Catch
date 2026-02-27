@@ -13,7 +13,7 @@ alert("Password reset link has been sent to your email!");
   alert(err.response?.data?.message || "Error");
 }
     }
-  };
+  
 
   return (
     <form onSubmit={handleForgot}>
