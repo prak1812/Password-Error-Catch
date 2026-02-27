@@ -7,10 +7,11 @@ export default function ForgotPassword() {
   const handleForgot = async (e) => {
     e.preventDefault();
     try {
-      const res = await API.post("/forgot-password", { email });
-      alert("Token: " + res.data.resetToken);
-    } catch (err) {
-      alert(err.response?.data?.message || "Error");
+      await API.post("/forgot-password", { email });
+alert("Password reset link has been sent to your email!");
+} catch (err) {
+  alert(err.response?.data?.message || "Error");
+}
     }
   };
 
