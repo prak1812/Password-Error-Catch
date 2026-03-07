@@ -3,12 +3,12 @@ import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import nodemailer from "nodemailer";
 
-
 export const register = async (req, res) => {
   try {
     const { email, password } = req.body;
 
     const exists = await User.findOne({ email });
+
     if (exists) {
       return res.status(400).json({ message: "User already exists" });
     }
@@ -17,12 +17,13 @@ export const register = async (req, res) => {
 
     await User.create({
       email,
-      password: hashedPassword,
+      password: hashedPassword
     });
 
     res.status(201).json({ message: "User registered successfully" });
 
   } catch (error) {
+    console.log(error);
     res.status(500).json({ message: "Server error" });
   }
 };
@@ -73,7 +74,8 @@ export const forgotPassword = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
- export const resetPassword = async (req, res) => {
+
+export const resetPassword = async (req, res) => {
   try {
     const { token, newPassword } = req.body;
 
@@ -97,21 +99,7 @@ export const forgotPassword = async (req, res) => {
     res.json({ message: "Password reset successful" });
 
   } catch (error) {
-    res.status(500).json({ message: "Server error" });
-  }
-};
-
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
-
-    user.password = hashedPassword;
-    user.resetToken = undefined;
-    user.resetTokenExpiry = undefined;
-
-    await user.save();
-
-    res.json({ message: "Password reset successful" });
-
-  } catch (error) {
+    console.log(error);
     res.status(500).json({ message: "Server error" });
   }
 };
