@@ -9,7 +9,7 @@ export default function Register() {
     e.preventDefault();
     try {
       const res = await API.post("/register", { email, password });
-      alert(res.data.message);
+      alert(res.data?.message || "User registered successfully!");
     } catch (err) {
       alert(err.response?.data?.message || "Error");
     }

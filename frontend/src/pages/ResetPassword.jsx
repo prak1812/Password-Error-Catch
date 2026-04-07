@@ -14,7 +14,7 @@ export default function ResetPassword() {
       });
       alert(res.data.message);
     } catch (err) {
-      alert(err.response?.data?.message || "Error");
+      alert(err.response?.data?.message || "User already exists!");
     }
   };
 
