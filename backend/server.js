@@ -4,16 +4,19 @@ import dotenv from "dotenv";
 import connectDB from "./config/db.js";
 import authRoutes from "./routes/authRoutes.js";
 
-
-
 dotenv.config();
-
 connectDB();
 
 const app = express();
 
-app.use(cors());
+app.use(cors({
+  origin: "https://password-error-catch-1.onrender.com",
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  credentials: true
+}));
+
 app.use(express.json());
+
 app.get("/", (req, res) => {
   res.send("Backend is running 🚀");
 });
