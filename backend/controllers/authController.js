@@ -83,23 +83,37 @@ export const forgotPassword = async (req, res) => {
 
     const resetUrl = `${process.env.CLIENT_URL}/reset-password/${resetToken}`;
 
-    // ✅ RESEND EMAIL
-    await resend.emails.send({
-      from: "onboarding@resend.dev", // change after verifying domain
-      to: user.email,
-      subject: "Password Reset",
-      html: `
-        <p>You requested a password reset</p>
-        <p>Click the link below to reset your password:</p>
-        <a href="${resetUrl}">${resetUrl}</a>
-      `,
-    });
+    // ✅ FIXED EMAIL BLOCK
+    try {
+      const response = await resend.emails.send({
+        from: "onboarding@resend.dev",
+        to: user.email,
+        subject: "Password Reset",
+        html: `
+          <p>You requested a password reset</p>
+          <p>Click the link below to reset your password:</p>
+          <a href="${resetUrl}">${resetUrl}</a>
+        `,
+      });
 
-    res.status(200).json({ message: "Password reset email sent" });
+      console.log("Email sent:", response);
+
+      return res.status(200).json({
+        message: "Password reset email sent"
+      });
+
+    } catch (error) {
+      console.error("Resend error:", error);
+
+      return res.status(500).json({
+        message: "Email failed",
+        error: error.message
+      });
+    }
 
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Server error" });
+    return res.status(500).json({ message: "Server error" });
   }
 };
 
