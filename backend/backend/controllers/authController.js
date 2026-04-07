@@ -2,9 +2,8 @@ import User from "../models/User.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
-import { Resend } from "resend";
+import nodemailer from "nodemailer";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
 
 // REGISTER
 export const register = async (req, res) => {
@@ -12,6 +11,7 @@ export const register = async (req, res) => {
     const { email, password } = req.body;
 
     const existingUser = await User.findOne({ email });
+
     if (existingUser) {
       return res.status(400).json({ message: "User already exists" });
     }
@@ -20,17 +20,19 @@ export const register = async (req, res) => {
 
     const user = new User({
       email,
-      password: hashedPassword,
+      password: hashedPassword
     });
 
     await user.save();
 
     res.json({ message: "User registered successfully" });
+
   } catch (error) {
-    console.error(error);
     res.status(500).json({ message: "Server error" });
   }
 };
+
+
 
 // LOGIN
 export const login = async (req, res) => {
@@ -58,13 +60,15 @@ export const login = async (req, res) => {
     res.json({ token });
 
   } catch (error) {
-    console.error(error);
     res.status(500).json({ message: "Server error" });
   }
 };
 
+
+
 // FORGOT PASSWORD (EMAIL)
 export const forgotPassword = async (req, res) => {
+        
   try {
     const { email } = req.body;
 
@@ -77,23 +81,35 @@ export const forgotPassword = async (req, res) => {
     const resetToken = crypto.randomBytes(32).toString("hex");
 
     user.resetPasswordToken = resetToken;
-    user.resetPasswordExpire = Date.now() + 3600000; // 1 hour
+    user.resetPasswordExpire = Date.now() + 3600000;
 
     await user.save();
 
+const transporter = nodemailer.createTransport({
+  host: "smtp.gmail.com",
+  port: 587,
+  secure: false,
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS
+  },
+  tls: {
+    rejectUnauthorized: false
+  }
+});
+
+// Verify connection before sending
+
     const resetUrl = `${process.env.CLIENT_URL}/reset-password/${resetToken}`;
 
-    // ✅ RESEND EMAIL
-    await resend.emails.send({
-      from: "onboarding@resend.dev", // change after verifying domain
+    const mailOptions = {
+      from: process.env.EMAIL_USER,
       to: user.email,
       subject: "Password Reset",
-      html: `
-        <p>You requested a password reset</p>
-        <p>Click the link below to reset your password:</p>
-        <a href="${resetUrl}">${resetUrl}</a>
-      `,
-    });
+      text: `Click this link to reset your password: ${resetUrl}`
+    };
+
+    await transporter.sendMail(mailOptions);
 
     res.status(200).json({ message: "Password reset email sent" });
 
@@ -103,6 +119,8 @@ export const forgotPassword = async (req, res) => {
   }
 };
 
+
+
 // RESET PASSWORD
 export const resetPassword = async (req, res) => {
   try {
@@ -110,7 +128,7 @@ export const resetPassword = async (req, res) => {
 
     const user = await User.findOne({
       resetPasswordToken: token,
-      resetPasswordExpire: { $gt: Date.now() },
+      resetPasswordExpire: { $gt: Date.now() }
     });
 
     if (!user) {
@@ -128,7 +146,6 @@ export const resetPassword = async (req, res) => {
     res.json({ message: "Password reset successful" });
 
   } catch (error) {
-    console.error(error);
     res.status(500).json({ message: "Server error" });
   }
 };
