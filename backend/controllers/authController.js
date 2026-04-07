@@ -99,7 +99,7 @@ const transporter = nodemailer.createTransport({
 });
 
 // Verify connection before sending
-await transporter.verify();
+
     const resetUrl = `${process.env.CLIENT_URL}/reset-password/${resetToken}`;
 
     const mailOptions = {
