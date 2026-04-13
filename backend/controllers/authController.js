@@ -64,7 +64,7 @@ export const forgotPassword = async (req, res) => {
         "api-key": process.env.BREVO_API_KEY,
       },
       body: JSON.stringify({
-        sender: { email: "tcsioninf@gmail.com", name: "Password Reset" },
+        sender: { email: "prakharsethi05@gmail.com", name: "Password Reset" },
         to: [{ email: user.email }],
         subject: "Password Reset Request",
         htmlContent: `
@@ -77,9 +77,14 @@ export const forgotPassword = async (req, res) => {
     });
 
     const data = await response.json();
-    console.log("Brevo response:", data);
+console.log("Brevo response:", data);
 
-    res.status(200).json({ message: "Password reset email sent successfully" });
+if (!response.ok) {
+  console.error("Brevo failed:", data);
+  return res.status(500).json({ message: "Email not sent" });
+}
+
+res.status(200).json({ message: "Password reset email sent successfully" });
 
   } catch (error) {
     console.error(error);
