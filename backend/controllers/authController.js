@@ -64,7 +64,7 @@ export const forgotPassword = async (req, res) => {
         "api-key": process.env.BREVO_API_KEY,
       },
       body: JSON.stringify({
-        sender: { email: "prakharsethi05@gmail.com", name: "Password Reset" },
+        sender: { email: "noreply@brevo.com", name: "Password Reset" },
         to: [{ email: user.email }],
         subject: "Password Reset Request",
         htmlContent: `
