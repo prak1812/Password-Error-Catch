@@ -2,6 +2,7 @@ import User from "../models/User.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
+import axios from "axios";
 
 // REGISTER
 export const register = async (req, res) => {
@@ -66,14 +67,19 @@ export const forgotPassword = async (req, res) => {
   try {
     const { email } = req.body;
 
+    console.log("=== FORGOT PASSWORD TRIGGERED ===");
     console.log("Incoming email:", email);
+    console.log("BREVO API KEY EXISTS:", process.env.BREVO_API_KEY ? "YES" : "NO");
+    console.log("CLIENT URL:", process.env.CLIENT_URL);
 
     const user = await User.findOne({ email });
 
     if (!user) {
-      console.log("User not found");
+      console.log("User not found in DB for email:", email);
       return res.status(404).json({ message: "User not found" });
     }
+
+    console.log("User found:", user.email);
 
     // Generate token
     const resetToken = crypto.randomBytes(32).toString("hex");
@@ -82,50 +88,56 @@ export const forgotPassword = async (req, res) => {
     user.resetPasswordExpire = Date.now() + 3600000; // 1 hour
 
     await user.save();
+    console.log("Reset token saved to DB");
 
     const resetUrl = `${process.env.CLIENT_URL}/reset-password/${resetToken}`;
-
     console.log("Reset URL:", resetUrl);
-    console.log("BREVO API KEY EXISTS:", process.env.BREVO_API_KEY ? "YES" : "NO");
 
-    // Send email via Brevo
-    const response = await fetch("https://api.brevo.com/v3/smtp/email", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "api-key": process.env.BREVO_API_KEY,
-      },
-      body: JSON.stringify({
-        sender: {
-          email: "noreply@brevo.com",
-          name: "Password Reset",
+    // Send email via Brevo using axios
+    try {
+      const brevoResponse = await axios.post(
+        "https://api.brevo.com/v3/smtp/email",
+        {
+          sender: {
+            email: "prakharsethi05@gmail.com",
+            name: "Password Reset",
+          },
+          to: [{ email: user.email }],
+          subject: "Password Reset Request",
+          htmlContent: `
+            <h3>Password Reset Request</h3>
+            <p>Click the link below to reset your password:</p>
+            <a href="${resetUrl}">${resetUrl}</a>
+            <p>This link expires in 1 hour.</p>
+          `,
         },
-        to: [{ email: user.email }],
-        subject: "Password Reset Request",
-        htmlContent: `
-          <h3>Password Reset Request</h3>
-          <p>Click the link below to reset your password:</p>
-          <a href="${resetUrl}">${resetUrl}</a>
-          <p>This link expires in 1 hour.</p>
-        `,
-      }),
-    });
+        {
+          headers: {
+            "Content-Type": "application/json",
+            "api-key": process.env.BREVO_API_KEY,
+          },
+        }
+      );
 
-    const data = await response.json();
+      console.log("BREVO STATUS:", brevoResponse.status);
+      console.log("BREVO RESPONSE:", JSON.stringify(brevoResponse.data));
 
-    console.log("STATUS:", response.status);
-    console.log("BREVO RESPONSE:", data);
+      return res.status(200).json({
+        message: "Password reset email sent successfully",
+      });
 
-    if (!response.ok) {
+    } catch (brevoError) {
+      // Axios throws on non-2xx — this catches it with full detail
+      console.error("BREVO AXIOS ERROR:");
+      console.error("Status:", brevoError.response?.status);
+      console.error("Data:", JSON.stringify(brevoError.response?.data));
+      console.error("Message:", brevoError.message);
+
       return res.status(500).json({
-        message: "Email not sent",
-        error: data,
+        message: "Email could not be sent",
+        error: brevoError.response?.data || brevoError.message,
       });
     }
-
-    res.status(200).json({
-      message: "Password reset email sent successfully",
-    });
 
   } catch (error) {
     console.error("FORGOT PASSWORD ERROR:", error);
