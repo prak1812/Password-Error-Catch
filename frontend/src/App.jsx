@@ -1,11 +1,17 @@
 import { useState } from "react";
 import Register from "./pages/Register";
+import { useRoutes } from "react-router-dom";
 import Login from "./pages/Login";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 
 export default function App() {
   const [page, setPage] = useState("register");
+  const routes = useRoutes([
+    { path: "/reset-password/:token", element: <ResetPassword /> }
+  ]);
+
+  if (routes) return routes;
 
   return (
     <div className="container">
