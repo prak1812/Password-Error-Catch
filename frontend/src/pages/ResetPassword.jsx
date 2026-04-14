@@ -11,7 +11,7 @@ export default function ResetPassword() {
   const handleReset = async (e) => {
     e.preventDefault();
     try {
-      const res = await API.post("/reset-password", {
+      const res = await API.post("/api/auth/reset-password", {
         token,
         newPassword,
       });

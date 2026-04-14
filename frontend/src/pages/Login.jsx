@@ -12,7 +12,7 @@ export default function Login() {
     setError("");
     setMessage("");
     try {
-      const res = await API.post("/login", { email, password });
+      const res = await API.post("/api/auth/login", { email, password });
       setMessage("Login successful! ✅");
     } catch (err) {
       setError(err.response?.data?.message || "Login failed");

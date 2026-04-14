@@ -13,7 +13,7 @@ export default function ForgotPassword() {
     setMessage("");
 
     try {
-      const res = await API.post("/forgot-password", { email });
+      const res = await API.post("/api/auth/forgot-password", { email });
 
       setMessage(res.data?.message || "Password reset link sent successfully!");
       setEmailSent(true);
