@@ -66,64 +66,54 @@ export const forgotPassword = async (req, res) => {
   try {
     const { email } = req.body;
 
-    console.log("Incoming email:", email);
-
     const user = await User.findOne({ email });
 
     if (!user) {
-      console.log("User not found");
       return res.status(404).json({ message: "User not found" });
     }
 
-    // Generate token
+    // ✅ Generate RAW token (sent in email)
     const resetToken = crypto.randomBytes(32).toString("hex");
 
-    user.resetPasswordToken = resetToken;
+    // ✅ HASHED token (stored in DB)
+    const hashedToken = crypto
+      .createHash("sha256")
+      .update(resetToken)
+      .digest("hex");
+
+    user.resetPasswordToken = hashedToken;
     user.resetPasswordExpire = Date.now() + 3600000; // 1 hour
 
     await user.save();
 
     const resetUrl = `${process.env.CLIENT_URL}/reset-password/${resetToken}`;
 
-    console.log("Reset URL:", resetUrl);
-    console.log("BREVO API KEY EXISTS:", process.env.BREVO_API_KEY ? "YES" : "NO");
-
     // Send email via Brevo
-    let response;
-    try {
-      response = await fetch("https://api.brevo.com/v3/smtp/email", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "api-key": process.env.BREVO_API_KEY,
+    const response = await fetch("https://api.brevo.com/v3/smtp/email", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "api-key": process.env.BREVO_API_KEY,
+      },
+      body: JSON.stringify({
+        sender: {
+          email: "prakharsethi05@gmail.com",
+          name: "Password Reset",
         },
-        body: JSON.stringify({
-          sender: {
-            email: "prakharsethi05@gmail.com",
-            name: "Password Reset",
-          },
-          to: [{ email: user.email }],
-          subject: "Password Reset Request",
-          htmlContent: `
-            <h3>Password Reset Request</h3>
-            <p>Click the link below to reset your password:</p>
-            <a href="${resetUrl}">${resetUrl}</a>
-            <p>This link expires in 1 hour.</p>
-          `,
-        }),
-      });
-    } catch (fetchError) {
-      console.error("FETCH CRASHED:", fetchError.message);
-      return res.status(500).json({ message: "Failed to reach Brevo", error: fetchError.message });
-    }
+        to: [{ email: user.email }],
+        subject: "Password Reset Request",
+        htmlContent: `
+          <h3>Password Reset Request</h3>
+          <p>Click the link below to reset your password:</p>
+          <a href="${resetUrl}">${resetUrl}</a>
+          <p>This link expires in 1 hour.</p>
+        `,
+      }),
+    });
 
     const data = await response.json();
 
-    console.log("STATUS:", response.status);
-    console.log("BREVO RESPONSE:", JSON.stringify(data));
-
     if (!response.ok) {
-      console.error("BREVO ERROR:", JSON.stringify(data));
       return res.status(500).json({
         message: "Email not sent",
         error: data,
@@ -140,13 +130,46 @@ export const forgotPassword = async (req, res) => {
   }
 };
 
+// ✅ VERIFY TOKEN
+export const verifyToken = async (req, res) => {
+  try {
+    const { token } = req.params;
+
+    const hashedToken = crypto
+      .createHash("sha256")
+      .update(token)
+      .digest("hex");
+
+    const user = await User.findOne({
+      resetPasswordToken: hashedToken,
+      resetPasswordExpire: { $gt: Date.now() },
+    });
+
+    if (!user) {
+      return res.status(400).json({ message: "Invalid or expired token" });
+    }
+
+    res.status(200).json({ message: "Token is valid" });
+
+  } catch (error) {
+    console.error("VERIFY TOKEN ERROR:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
 // RESET PASSWORD
 export const resetPassword = async (req, res) => {
   try {
-    const { token, newPassword } = req.body;
+    const { token } = req.params;
+    const { newPassword } = req.body;
+
+    const hashedToken = crypto
+      .createHash("sha256")
+      .update(token)
+      .digest("hex");
 
     const user = await User.findOne({
-      resetPasswordToken: token,
+      resetPasswordToken: hashedToken,
       resetPasswordExpire: { $gt: Date.now() },
     });
 
