@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: your-frontend-name
+    name: password-error-catch-1
     env: static
     buildCommand: npm run build
     staticPublishPath: ./build
