@@ -97,7 +97,7 @@ export const forgotPassword = async (req, res) => {
       },
       body: JSON.stringify({
         sender: {
-          email: "prakharsethi05@gmail.com",
+          email: "tcsioninf@gmail.com",
           name: "Password Reset",
         },
         to: [{ email: user.email }],
@@ -109,7 +109,7 @@ export const forgotPassword = async (req, res) => {
           <p>This link expires in 1 hour.</p>
         `,
       }),
-    });
+    }); 
 
     const data = await response.json();
 
@@ -122,7 +122,7 @@ export const forgotPassword = async (req, res) => {
 
     res.status(200).json({
       message: "Password reset email sent successfully",
-        resetUrl,
+  
     });
 
   } catch (error) {
@@ -161,8 +161,8 @@ export const verifyToken = async (req, res) => {
 // RESET PASSWORD
 export const resetPassword = async (req, res) => {
   try {
-    const { token } = req.params;
-    const { newPassword } = req.body;
+    const { token ,newPassword } = req.body;
+    
 
     const hashedToken = crypto
       .createHash("sha256")
