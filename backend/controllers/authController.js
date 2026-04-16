@@ -89,7 +89,7 @@ export const forgotPassword = async (req, res) => {
     const resetUrl = `${process.env.CLIENT_URL}/reset-password/${resetToken}`;
 
     // Send email via Brevo
-    const response = await fetch("https://api.brevo.com/v3/smtp/email", {
+    const response = await fetch("https://api.brevo.com/v3/emailCampaigns", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
